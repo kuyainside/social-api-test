@@ -35,42 +35,43 @@ class Subscribe < ApplicationRecord
   end
 
   def self.block(requestor, target)
-    [requestor, target].each do |email|
-      return {message: "#{email} is invalid email", success: false} unless Validation.new.email(email)
-    end
-    action = Subscribe.init_block(requestor, target)
-    action[:req].subscribes.find_by_subscriber_id(action[:user_target].id).update_attribute(:block, true)
-    return {success: true}
+    action = Subscribe.init_block(requestor, target, "block")
+    return action
   end
 
   def self.unblock(requestor, target)
-    [requestor, target].each do |email|
-      return {message: "#{email} is invalid email", success: false} unless Validation.new.email(email)
-    end
-    action = Subscribe.init_block(requestor, target)
-    action[:req].subscribes.find_by_subscriber_id(action[:user_target].id).update_attribute(:block, false)
-    return {success: true}
+    action = Subscribe.init_block(requestor, target, "unblock")
+    return action
   end
 
-  def self.init_block(requestor, target)
+  def self.init_block(requestor, target, type)
     users = []
     [requestor, target].each do |email|
+      return {message: "#{email} is invalid email", success: false} unless Validation.new.email(email)
       user = User.find_by(email: email)
+      return {message: "This email #{email} is not found", success: false} unless user.present?
       users << user
-      return {message: "#{email} can't be blank or email is not exist", success: false} unless user.present?
     end
 
-    user_target = User.find_by_email(target)
-    req = User.find_by_email(requestor)
-    return {user_target: user_target, req: req}
+    req = users.first
+    tar = users.last
+    
+    case type
+    when "block"
+      req.subscribes.find_by_subscriber_id(tar.id).update_attribute(:block, true)
+      return {success: true}
+    when "unblock"
+      req.subscribes.find_by_subscriber_id(tar.id).update_attribute(:block, false)
+      return {success: true}
+    end
   end
 
   def self.send_email(sender, text)
-    return {message: "#{email} is invalid email", success: false} unless Validation.new.email(email)
+    return {message: "#{email} is invalid email", success: false} unless Validation.new.email(sender)
     user = User.find_by_email(sender)
     return {message: "User not found", success: false} if user.blank?
     Subscribe.scan_email(sender, text)
-    friend_ids = user.friends.map(&:friend_id)
+    friend_ids = user.friend_ids
     block_ids = user.subscribes.where(block: true).map(&:subscriber_id)
     non_block_ids = user.subscribes.where(block: false).map(&:subscriber_id)
     recipients = (friend_ids + non_block_ids).select{|x| block_ids.exclude?(x)}.uniq || []
