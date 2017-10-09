@@ -34,4 +34,8 @@ class User < ApplicationRecord
   def is_connected?(target)
     friends.include?(target)
   end
+
+  def has_subscriber?(user)
+    self.subscribers.include?(user)
+  end
 end

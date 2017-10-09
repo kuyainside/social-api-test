@@ -1,30 +1,30 @@
 class Api::SubscribesController < ApplicationController
 
-  api :post, '/subscribes', 'Create a subscribe'
-  param :requestor, String, required: true, desc: 'Requestor email for subscribe'
-  param :target, String, required: true, desc: 'Target email get new subscriber'
+  api :post, '/subscribes', 'Subscribe an email'
+  param :requestor, String, required: true, desc: 'Subscriber email'
+  param :target, String, required: true, desc: 'Subscribe email'
   def create
     subscribe = Subscribe.store(params[:requestor], params[:target])
     render json: subscribe
   end
 
   api :post, '/subscribes/block', 'Block subscriber'
-  param :requestor, String, required: true, desc: 'Requestor email'
-  param :target, String, required: true, desc: 'Target email to block'
+  param :requestor, String, required: true, desc: 'Subscribe email'
+  param :target, String, required: true, desc: 'Subscriber email'
   def block
     block = Subscribe.block(params[:requestor], params[:target])
     render json: block
   end
 
   api :post, '/subscribes/unblock', 'Unblock subscriber'
-  param :requestor, String, required: true, desc: 'Requestor email'
-  param :target, String, required: true, desc: 'Target email'
+  param :requestor, String, required: true, desc: 'Subscribe email'
+  param :target, String, required: true, desc: 'Subscriber email'
   def unblock
     block = Subscribe.unblock(params[:requestor], params[:target])
     render json: block
   end
 
-  api :post, '/subscribes/send_email', 'Send email subscriber'
+  api :post, '/subscribes/send_email', 'Send updates to subscibers or friends'
   param :sender, String, required: true, desc: 'Sender email'
   param :text, String, required: true, desc: 'Content'
   def send_email

@@ -19,19 +19,13 @@ class Subscribe < ApplicationRecord
         return {message: e.to_s, success: false}
       end
     end
-
-    begin
-      Subscribe.create_subscribe(users)
-      return {success: true}
-    rescue => e
-      return {message: e.to_s, success: false}
-    end
+    
+    Subscribe.create_subscribe(users)
+    return {success: true}
   end
 
   def self.create_subscribe(users)
-    #first = requestor
-    #last = target
-    users.last.subscribes.create!(subscriber_id: users.first.id)
+    users.last.subscribes.create!(subscriber_id: users.first.id) unless users.last.has_subscriber?(users.first)
   end
 
   def self.block(requestor, target)
@@ -67,10 +61,10 @@ class Subscribe < ApplicationRecord
   end
 
   def self.send_email(sender, text)
-    return {message: "#{email} is invalid email", success: false} unless Validation.new.email(sender)
+    return {message: "#{sender} is invalid email", success: false} unless Validation.new.email(sender)
     user = User.find_by_email(sender)
     return {message: "User not found", success: false} if user.blank?
-    Subscribe.scan_email(sender, text)
+    Subscribe.scan_email(user, text)
     friend_ids = user.friend_ids
     block_ids = user.subscribes.where(block: true).map(&:subscriber_id)
     non_block_ids = user.subscribes.where(block: false).map(&:subscriber_id)
@@ -80,9 +74,12 @@ class Subscribe < ApplicationRecord
 
   def self.scan_email(user, text)
     emails = []
-    Validation.new.scan_email(text){ |x| emails << x }
+    Validation.new.scan_email(text).each do |email|
+      emails << email
+    end
     emails.each do |email|
-      Subscribe.create_subscribe(email, user)
+      requestor = User.init(email)
+      Subscribe.create_subscribe([requestor, user])
     end
   end
 end
