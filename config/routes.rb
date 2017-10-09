@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  apipie
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   namespace :api do
     resources :friends, only: [:index, :create] do
@@ -16,4 +15,7 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  root 'apipie/apipies#index'
+  apipie
 end
